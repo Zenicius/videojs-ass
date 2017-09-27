@@ -9,12 +9,8 @@ Add **Advanced SubStation Alpha (ASS)** subtitles support to
 
 For plugin that supports videojs v5.x install using either:
 
-- `bower install videojs-ass-es6`
-
-or
-
+- `yarn add videojs-ass-es6`
 - `npm install videojs-ass-es6`
-
 
 ## Usage
 
