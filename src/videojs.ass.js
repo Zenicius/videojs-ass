@@ -42,7 +42,7 @@ class AASSubtitles extends Plugin {
 
     if (options.subtitles) {
       for (const sub of options.subtitles) {
-        this.addSubtitle(sub.src, sub.label);
+        this.addSubtitle(sub.src, sub.label, sub.srclang, sub.enabled);
       }
     }
 
@@ -70,15 +70,15 @@ class AASSubtitles extends Plugin {
     return this.player.currentTime() - this.delay;
   }
 
-  async addSubtitle(url, label, srclang = 'en') {
+  async addSubtitle(url, label, srclang = 'en', enabled = false) {
     console.log('Adding track', label);
     const track = {
       src: '',
       kind: 'subtitles',
       label: label || 'Unknown',
       srclang: srclang,
-      default: false,
-      mode: 'disabled'
+      default: enabled,
+      mode: enabled ? 'showing' : 'disabled'
     };
 
     const ass = await libjass.ASS.fromUrl(url, libjass.Format.ASS);
@@ -183,7 +183,6 @@ class AASSubtitles extends Plugin {
 
       const sub = this.current();
       if (!sub) return;
-      console.log('resize renderer', subsWrapperWidth, subsWrapperHeight, subsWrapperLeft, subsWrapperTop);
       sub.renderer.resize(subsWrapperWidth, subsWrapperHeight, subsWrapperLeft, subsWrapperTop);
     }, 100);
   }

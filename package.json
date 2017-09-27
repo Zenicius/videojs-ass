@@ -1,6 +1,6 @@
 {
   "name": "videojs-ass-es6",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "author": "Yme-Jan Iedema <yme-jan@iedema.me>",
   "description": "ASS/SSA subtitle overlay for videojs",
   "repository": {
