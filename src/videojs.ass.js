@@ -5,8 +5,8 @@
 (function (videojs, libjass) {
   'use strict';
 
-  var vjs_ass = function (options) {
-    var cur_id = 0,
+  const vjs_ass = function (options) {
+    let cur_id = 0,
       id_count = 0,
       overlay = document.createElement('div'),
       clocks = [],
@@ -15,7 +15,6 @@
       player = this,
       renderers = [],
       rendererSettings = null,
-      OverlayComponent = null,
       assTrackIdMap = {},
       tracks = player.textTracks(),
       isTrackSwitching = false;
@@ -26,14 +25,14 @@
 
     overlay.className = 'vjs-ass';
 
-    OverlayComponent = {
+    let OverlayComponent = {
       name: function () {
         return 'AssOverlay';
       },
       el: function () {
         return overlay;
       }
-    }
+    };
 
     player.addChild(OverlayComponent, {}, 3);
 
@@ -65,7 +64,7 @@
     function updateDisplayArea() {
       setTimeout(function () {
         // player might not have information on video dimensions when using external providers
-        var videoWidth = options.videoWidth || player.videoWidth() || player.el().offsetWidth,
+        let videoWidth = options.videoWidth || player.videoWidth() || player.el().offsetWidth,
           videoHeight = options.videoHeight || player.videoHeight() || player.el().offsetHeight,
           videoOffsetWidth = player.el().offsetWidth,
           videoOffsetHeight = player.el().offsetHeight,
@@ -86,7 +85,7 @@
     player.on('fullscreenchange', updateDisplayArea);
 
     player.on('dispose', function () {
-      for (var i = 0; i < clocks.length; i++) {
+      for (let i = 0; i < clocks.length; i++) {
         clocks[i].disable();
       }
       window.removeEventListener('resize', updateDisplayArea);
@@ -97,7 +96,7 @@
         return;
       }
 
-      var activeTrack = this.tracks_.find(function (track) {
+      let activeTrack = this.tracks_.find(function (track) {
         return track.mode === 'showing';
       });
 
@@ -107,7 +106,7 @@
       } else {
         overlay.style.display = 'none';
       }
-    })
+    });
 
     rendererSettings = new libjass.renderers.RendererSettings();
     libjass.ASS.fromUrl(options.src, libjass.Format.ASS).then(
@@ -122,14 +121,14 @@
             .makeFontMapFromStyleElement(document.getElementById(options.fontMapById));
         }
 
-        addTrack(options.src, { label: options.label, srclang: options.srclang, switchImmediately: true });
+        addTrack(options.src, {label: options.label, srclang: options.srclang, switchImmediately: true});
         renderers[cur_id] = new libjass.renderers.WebRenderer(ass, clocks[cur_id], overlay, rendererSettings);
       }
     );
 
     function addTrack(url, opts) {
-      var newTrack = player.addRemoteTextTrack({
-        src: "",
+      const newTrack = player.addRemoteTextTrack({
+        src: '',
         kind: 'subtitles',
         label: opts.label || 'ASS #' + cur_id,
         srclang: opts.srclang || 'vjs-ass-' + cur_id,
@@ -138,25 +137,25 @@
 
       assTrackIdMap[newTrack.srclang + newTrack.label] = cur_id;
 
-      if(!opts.switchImmediately) {
+      if (!opts.switchImmediately) {
         // fix multiple track selected highlight issue
-        for (var t = 0; t < tracks.length; t++) {
-          if (tracks[t].mode === "showing") {
-            tracks[t].mode = "showing";
+        for (let t = 0; t < tracks.length; t++) {
+          if (tracks[t].mode === 'showing') {
+            tracks[t].mode = 'showing';
           }
         }
         return;
       }
 
       isTrackSwitching = true;
-      for (var t = 0; t < tracks.length; t++) {
-        if (tracks[t].label == newTrack.label && tracks[t].language == newTrack.srclang) {
-          if (tracks[t].mode !== "showing") {
-            tracks[t].mode = "showing";
+      for (let t = 0; t < tracks.length; t++) {
+        if (tracks[t].label === newTrack.label && tracks[t].language === newTrack.srclang) {
+          if (tracks[t].mode !== 'showing') {
+            tracks[t].mode = 'showing';
           }
         } else {
-          if (tracks[t].mode === "showing") {
-            tracks[t].mode = "disabled";
+          if (tracks[t].mode === 'showing') {
+            tracks[t].mode = 'disabled';
           }
         }
       }
@@ -164,12 +163,12 @@
     }
 
     function switchTrackTo(selected_track_id) {
-      renderers[cur_id]._removeAllSubs();
+      // renderers[cur_id]._removeAllSubs();
       renderers[cur_id]._preRenderedSubs.clear();
       renderers[cur_id].clock.disable();
 
       cur_id = selected_track_id;
-      if (cur_id == undefined) {
+      if (cur_id === undefined) {
         // case when we switche to regular non ASS closed captioning
         return;
       }
@@ -183,9 +182,9 @@
       Experimental API use at your own risk!!
     */
     function loadNewSubtitle(url, label, srclang, switchImmediately) {
-      var old_id = cur_id;
+      const old_id = cur_id;
       if (switchImmediately) {
-        renderers[cur_id]._removeAllSubs();
+        //renderers[cur_id]._removeAllSubs();
         renderers[cur_id]._preRenderedSubs.clear();
         renderers[cur_id].clock.disable();
       }
@@ -200,24 +199,24 @@
           if (switchImmediately) {
             clocks[cur_id].play();
           } else {
-            renderers[cur_id]._removeAllSubs();
+            // renderers[cur_id]._removeAllSubs();
             renderers[cur_id]._preRenderedSubs.clear();
             renderers[cur_id].clock.disable();
           }
 
-          addTrack(options.src, { label: label, srclang: srclang, switchImmediately: switchImmediately });
+          addTrack(options.src, {label: label, srclang: srclang, switchImmediately: switchImmediately});
 
           if (!switchImmediately) {
             cur_id = old_id;
           }
         }
       );
-    };
+    }
 
     return {
       loadNewSubtitle: loadNewSubtitle
     };
   };
 
-  videojs.plugin('ass', vjs_ass);
+  videojs.registerPlugin('ass', vjs_ass);
 }(window.videojs, window.libjass));
