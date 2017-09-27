@@ -168,6 +168,7 @@ class AASSubtitles extends Plugin {
 
   updateDisplayArea() {
     setTimeout(() => {
+      if (!this.player) return;
       // player might not have information on video dimensions when using external providers
       let videoWidth = this.player.videoWidth() || this.player.el().offsetWidth,
         videoHeight = this.player.videoHeight() || this.player.el().offsetHeight,
@@ -193,15 +194,15 @@ class AASSubtitles extends Plugin {
     }
 
     this.player.textTracks().removeEventListener('change', this.switchTrack.bind(this));
-    this.player.removeEventListener('play', this.play.bind(this));
-    this.player.removeEventListener('pause', this.pause.bind(this));
-    this.player.removeEventListener('seeking', this.seeking.bind(this));
-    this.player.removeEventListener('ratechange', this.ratechange.bind(this));
+    this.player.off('play', this.play.bind(this));
+    this.player.off('pause', this.pause.bind(this));
+    this.player.off('seeking', this.seeking.bind(this));
+    this.player.off('ratechange', this.ratechange.bind(this));
 
     window.removeEventListener('resize', this.updateDisplayArea.bind(this));
-    this.player.removeEventListener('loadedmetadata', this.updateDisplayArea.bind(this));
-    this.player.removeEventListener('resize', this.updateDisplayArea.bind(this));
-    this.player.removeEventListener('fullscreenchange', this.updateDisplayArea.bind(this));
+    this.player.off('loadedmetadata', this.updateDisplayArea.bind(this));
+    this.player.off('resize', this.updateDisplayArea.bind(this));
+    this.player.off('fullscreenchange', this.updateDisplayArea.bind(this));
   }
 }
 
