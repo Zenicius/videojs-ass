@@ -1,6 +1,7 @@
 /*
  * Author: Yme-Jan Iedema <yme-jan@iedema.me>
  * Based off the work of Sunny Li (https://github.com/SunnyLi/videojs-ass)
+ * Code Adapted for crunchy under APACHE 2.0 by Zenicius
  */
 
 if (typeof require !== 'undefined' || typeof window.require !== 'undefined') {
@@ -14,7 +15,6 @@ if (typeof videojs === 'undefined') {
 const Plugin = videojs.getPlugin('plugin');
 
 class AASSubtitles extends Plugin {
-
   constructor(player, options) {
     super(player, options);
 
@@ -39,13 +39,11 @@ class AASSubtitles extends Plugin {
     player.on('resize', this.updateDisplayArea.bind(this));
     player.on('fullscreenchange', this.updateDisplayArea.bind(this));
 
-
     if (options.subtitles) {
       for (const sub of options.subtitles) {
         this.addSubtitle(sub.src, sub.label, sub.srclang, sub.enabled);
       }
     }
-
   }
 
   createOverlay() {
@@ -58,7 +56,7 @@ class AASSubtitles extends Plugin {
       },
       el: () => {
         return overlay;
-      }
+      },
     };
 
     this.player.addChild(OverlayComponent, {}, 3);
@@ -78,7 +76,7 @@ class AASSubtitles extends Plugin {
       label: label || 'Unknown',
       srclang: srclang,
       default: enabled,
-      mode: enabled ? 'showing' : 'disabled'
+      mode: enabled ? 'showing' : 'disabled',
     };
 
     const ass = await libjass.ASS.fromUrl(url, libjass.Format.ASS);
@@ -93,23 +91,32 @@ class AASSubtitles extends Plugin {
       clock: clock,
       renderer: renderer,
     });
+
+    // forces to start default subtitles
+    if (enabled) {
+      this.switchTrack();
+    }
   }
 
   switchTrack() {
     if (this.is_switching) return;
-    this.is_switching = true; // recursion prevention, changing track.mode triggers track change
     const selected_track = this.player.textTracks().tracks_.find(t => t.mode === 'showing');
 
-    if (this.current_track) {
-      this.stop(this.current_track);
-    }
+    // prenvent bug that keeps starting and stoping same subtitle
+    if (this.current_track == null || this.current_track !== selected_track) {
+      this.is_switching = true; // recursion prevention, changing track.mode triggers track change
 
-    if (selected_track) {
-      this.current_track = selected_track;
-      this.start(selected_track);
-    }
+      if (this.current_track) {
+        this.stop(this.current_track);
+      }
 
-    this.is_switching = false;
+      if (selected_track) {
+        this.current_track = selected_track;
+        this.start(selected_track);
+      }
+
+      this.is_switching = false;
+    }
   }
 
   start(track) {
@@ -134,7 +141,6 @@ class AASSubtitles extends Plugin {
     console.log('Stopping ', subtitle.track.label);
     subtitle.track.mode = 'disabled';
     subtitle.renderer.clock.disable();
-
   }
 
   play() {
@@ -167,24 +173,27 @@ class AASSubtitles extends Plugin {
   }
 
   updateDisplayArea() {
-    setTimeout(() => {
-      if (!this.player) return;
-      // player might not have information on video dimensions when using external providers
-      let videoWidth = this.player.videoWidth() || this.player.el().offsetWidth,
-        videoHeight = this.player.videoHeight() || this.player.el().offsetHeight,
-        videoOffsetWidth = this.player.el().offsetWidth,
-        videoOffsetHeight = this.player.el().offsetHeight,
+    setTimeout(
+      () => {
+        // fix bug trying to resize when theres no player
+        if (!this.player || !this.player.player_) return;
+        // player might not have information on video dimensions when using external providers
+        let videoWidth = this.player.videoWidth() || this.player.el().offsetWidth,
+          videoHeight = this.player.videoHeight() || this.player.el().offsetHeight,
+          videoOffsetWidth = this.player.el().offsetWidth,
+          videoOffsetHeight = this.player.el().offsetHeight,
+          ratio = Math.min(videoOffsetWidth / videoWidth, videoOffsetHeight / videoHeight),
+          subsWrapperWidth = videoWidth * ratio,
+          subsWrapperHeight = videoHeight * ratio,
+          subsWrapperLeft = (videoOffsetWidth - subsWrapperWidth) / 2,
+          subsWrapperTop = (videoOffsetHeight - subsWrapperHeight) / 2;
 
-        ratio = Math.min(videoOffsetWidth / videoWidth, videoOffsetHeight / videoHeight),
-        subsWrapperWidth = videoWidth * ratio,
-        subsWrapperHeight = videoHeight * ratio,
-        subsWrapperLeft = (videoOffsetWidth - subsWrapperWidth) / 2,
-        subsWrapperTop = (videoOffsetHeight - subsWrapperHeight) / 2;
-
-      const sub = this.current();
-      if (!sub) return;
-      sub.renderer.resize(subsWrapperWidth, subsWrapperHeight, subsWrapperLeft, subsWrapperTop);
-    }, 100);
+        const sub = this.current();
+        if (!sub) return;
+        sub.renderer.resize(subsWrapperWidth, subsWrapperHeight, subsWrapperLeft, subsWrapperTop);
+      },
+      100
+    );
   }
 
   dispose() {
